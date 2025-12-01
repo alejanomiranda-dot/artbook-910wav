@@ -7,6 +7,6 @@ import { createClient } from "@supabase/supabase-js";
 const supabaseUrl = "https://qjeleezjbecjpoirrhqe/supabase.co";
 
 // 👇 Y acá va la ANON / public key (la que dice "anon public")
-const supabaseAnonKey = "sb_publishable_UrmYOoxd08ksuhSU3b-mKQ_SaPzTZCC";
+const supabaseAnonKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFqZWxlZXpqYmVjanBvaXJyaHFlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjQ1NTc3MTIsImV4cCI6MjA4MDEzMzcxMn0.TVacOzkfM07cev8GzRmgxVI6N0EsX20Qer_6_Ctiu9s";
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
