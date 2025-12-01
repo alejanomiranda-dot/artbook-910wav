@@ -1,0 +1,107 @@
+// src/components/ArtistsList.jsx
+import { useEffect, useState } from "react"
+import { supabase } from "../supabaseClient"
+
+export function ArtistsList() {
+  const [artists, setArtists] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+
+  useEffect(() => {
+    const fetchArtists = async () => {
+      try {
+        setLoading(true)
+        setError(null)
+
+        // Leemos de la tabla "artists"
+        const { data, error } = await supabase
+          .from("artists")
+          .select("id, nombre_artistico, ciudad, pais, generos, climas")
+          .order("id", { ascending: true })
+
+        if (error) throw error
+
+        setArtists(data || [])
+      } catch (err) {
+        console.error("Error cargando artistas:", err)
+        setError("No se pudieron cargar los artistas. Probá de nuevo más tarde.")
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchArtists()
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="text-center text-slate-300 mt-8">
+        Cargando artistas...
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="text-center text-red-400 mt-8">
+        {error}
+      </div>
+    )
+  }
+
+  if (artists.length === 0) {
+    return (
+      <div className="text-center text-slate-400 mt-8">
+        Todavía no hay artistas cargados en Artbook.
+      </div>
+    )
+  }
+
+  return (
+    <div className="grid gap-6 md:grid-cols-3 mt-10">
+      {artists.map((artist) => (
+        <article
+          key={artist.id}
+          className="bg-[#111] border border-slate-800 rounded-2xl p-5 flex flex-col justify-between shadow-lg"
+        >
+          <div>
+            <h3 className="text-white font-semibold text-lg mb-1">
+              {artist.nombre_artistico}
+            </h3>
+
+            <p className="text-xs text-slate-400 mb-2">
+              {artist.ciudad}, {artist.pais}
+            </p>
+
+            {artist.generos && (
+              <div className="flex flex-wrap gap-1 mb-3">
+                {artist.generos.split(",").map((g) => (
+                  <span
+                    key={g.trim()}
+                    className="text-[10px] px-2 py-1 rounded-full bg-purple-700/20 text-purple-300 border border-purple-500/40"
+                  >
+                    {g.trim()}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {artist.climas && (
+              <p className="text-xs text-slate-300">
+                <span className="font-semibold text-slate-200">Climas: </span>
+                {artist.climas}
+              </p>
+            )}
+          </div>
+
+          <button
+            type="button"
+            className="mt-4 inline-flex items-center justify-center text-xs font-semibold px-3 py-2 rounded-full bg-purple-600 hover:bg-purple-500 text-white transition-colors"
+          >
+            Ver perfil
+          </button>
+        </article>
+      ))}
+    </div>
+  )
+}
