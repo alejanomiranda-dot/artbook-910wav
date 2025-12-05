@@ -1,118 +1,321 @@
-import { useParams, Link } from 'react-router-dom';
-import { artists } from '../data/artists';
-import { useEffect } from 'react';
+// src/pages/ArtistProfile.jsx
+import { useParams, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { supabase } from "../lib/supabaseClient";
 
 function ArtistProfile() {
     const { slug } = useParams();
-    const artist = artists.find(a => a.slug === slug);
+    const navigate = useNavigate();
+
+    const [artist, setArtist] = useState(null);
+    const [loading, setLoading] = useState(true);
+    const [errorMsg, setErrorMsg] = useState("");
+    const [imgError, setImgError] = useState(false);
 
     useEffect(() => {
-        if (artist) {
-            // TODO: Call n8n webhook to increment 'visitas_totales' and 'visitas_mes'
-            console.log(`Tracking visit for artist: ${artist.nombre_artistico}`);
-        }
-    }, [artist]);
+        async function fetchArtist() {
+            setLoading(true);
+            setErrorMsg("");
+            setArtist(null);
 
-    if (!artist) {
+            const { data, error } = await supabase
+                .from("artists")
+                .select("*")
+                .eq("slug", slug)
+                .maybeSingle();
+
+            if (error) {
+                console.error(error);
+                setErrorMsg("No se pudo cargar el perfil. Probá de nuevo más tarde.");
+                setLoading(false);
+                return;
+            }
+
+            if (!data) {
+                setErrorMsg("No encontramos este artista en Artbook.");
+                setLoading(false);
+                return;
+            }
+
+            setArtist(data);
+            setLoading(false);
+
+            // Contador de visitas
+            const now = new Date();
+            const lastVisit = data.ultima_visita ? new Date(data.ultima_visita) : null;
+
+            let newVisitasMes = data.visitas_mes || 0;
+            const currentTotal = data.visitas_total || 0;
+
+            if (
+                !lastVisit ||
+                lastVisit.getMonth() !== now.getMonth() ||
+                lastVisit.getFullYear() !== now.getFullYear()
+            ) {
+                newVisitasMes = 1;
+            } else {
+                newVisitasMes += 1;
+            }
+
+            await supabase
+                .from("artists")
+                .update({
+                    visitas_total: currentTotal + 1,
+                    visitas_mes: newVisitasMes,
+                    ultima_visita: now.toISOString(),
+                })
+                .eq("id", data.id);
+        }
+
+        if (slug) fetchArtist();
+    }, [slug]);
+
+    if (loading) {
         return (
-            <div className="not-found">
-                <h2>Artista no encontrado</h2>
-                <Link to="/book" className="btn btn-primary">Volver al Book</Link>
+            <div className="artist-page">
+                <p className="artist-status-text">Cargando perfil…</p>
             </div>
         );
     }
 
+    if (errorMsg) {
+        return (
+            <div className="artist-page">
+                <p className="artist-status-text artist-status-error">{errorMsg}</p>
+                <button className="btn btn-secondary" onClick={() => navigate("/book")}>
+                    Volver al catálogo
+                </button>
+            </div>
+        );
+    }
+
+    if (!artist) {
+        return (
+            <div className="artist-page">
+                <p className="artist-status-text">Perfil no disponible.</p>
+                <button className="btn btn-secondary" onClick={() => navigate("/book")}>
+                    Volver al catálogo
+                </button>
+            </div>
+        );
+    }
+
+    // Helpers
+    const generos = artist.generos ? artist.generos.split(",").map(g => g.trim()).filter(Boolean) : [];
+    const tiposEventos = artist.tipos_eventos ? artist.tipos_eventos.split(",").map(t => t.trim()).filter(Boolean) : [];
+    const climas = artist.climas ? artist.climas.split(",").map(c => c.trim()).filter(Boolean) : [];
+
+    const normalizeLink = (url) => {
+        if (!url) return "";
+        const trimmed = url.trim();
+        if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) return trimmed;
+        return `https://${trimmed}`;
+    };
+
+    const tracks = [
+        { titulo: artist.musica_1_titu, link: artist.musica_1_link, des: artist.musica_1_des },
+        { titulo: artist.musica_2_titu, link: artist.musica_2_link, des: artist.musica_2_des },
+        { titulo: artist.musica_3_titu, link: artist.musica_3_link, des: artist.musica_3_des },
+    ].filter(t => t && (t.titulo || t.link || t.des));
+
+    const videos = [
+        { titulo: artist.video_1_titulo, link: artist.video_1_link },
+        { titulo: artist.video_2_titulo, link: artist.video_2_link },
+    ].filter(v => v && (v.titulo || v.link));
+
+    const hasMusic = tracks.length > 0;
+    const hasVideos = videos.length > 0;
+
     return (
-        <div className="artist-profile">
-            <section className="profile-hero" style={{ backgroundImage: `linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.9)), url(${artist.foto})` }}>
-                <div className="profile-hero-content">
-                    <h1>{artist.nombre_artistico}</h1>
-                    <p className="location">{artist.ciudad}, {artist.pais}</p>
-                    <div className="hero-tags">
-                        {artist.generos.map(g => <span key={g} className="tag-hero">{g}</span>)}
-                    </div>
-                    <div className="hero-actions">
-                        {artist.contacto.instagram && (
-                            <a href={`https://instagram.com/${artist.contacto.instagram}`} target="_blank" rel="noopener noreferrer" className="btn btn-outline">
-                                Instagram
-                            </a>
-                        )}
-                        <a href="#contacto" className="btn btn-primary">Contratar</a>
-                    </div>
+        <div className="artist-page">
+
+            {/* ███ PORTADA DESTACADA (EPK Style) ███ */}
+            <div
+                className="artist-cover"
+                style={{
+                    width: "100%",
+                    height: "320px",
+                    backgroundImage: artist.portada
+                        ? `linear-gradient(to bottom, rgba(11,13,18,0) 50%, rgba(11,13,18,1) 100%), url(${artist.portada})`
+                        : `linear-gradient(to bottom, #2e1065, #0B0D12)`,
+                    backgroundSize: "cover",
+                    backgroundPosition: "center",
+                }}
+            />
+
+            {/* HEADER (Superpuesto) */}
+            <header className="artist-header">
+                <div className="artist-avatar-wrapper">
+                    {artist.foto && !imgError ? (
+                        <img
+                            src={artist.foto}
+                            alt={artist.nombre_artistico}
+                            className="artist-avatar"
+                            onError={() => setImgError(true)}
+                        />
+                    ) : (
+                        <div className="artist-avatar-placeholder">
+                            <span>{artist.nombre_artistico?.[0] || "A"}</span>
+                        </div>
+                    )}
                 </div>
-            </section>
 
-            <div className="profile-container">
-                <section className="bio-section">
-                    <h2>Biografía</h2>
-                    <p className="bio-short">{artist.bio_corta}</p>
-                    <p className="bio-long">{artist.bio_larga}</p>
-                </section>
+                <div className="artist-main-info">
+                    <h1 className="artist-name">{artist.nombre_artistico}</h1>
 
-                <section className="music-section">
-                    <h2>Música Destacada</h2>
-                    <div className="music-grid">
-                        {artist.musica.map((track, index) => (
-                            <div key={index} className="music-card">
-                                <h3>{track.titulo}</h3>
-                                <p>{track.descripcion}</p>
-                                <a href={track.link} target="_blank" rel="noopener noreferrer" className="btn-link">Escuchar</a>
-                            </div>
-                        ))}
-                    </div>
-                </section>
+                    <p className="artist-location">
+                        {artist.ciudad}
+                        {artist.ciudad && artist.pais ? ", " : ""}
+                        {artist.pais}
+                    </p>
 
-                <section className="highlights-section">
-                    <h2>Highlights</h2>
-                    <ul className="highlights-list">
-                        {artist.highlights.map((h, i) => (
-                            <li key={i}>{h}</li>
-                        ))}
-                    </ul>
-                </section>
-
-                <section className="videos-section">
-                    <h2>Videos en Vivo</h2>
-                    <div className="videos-grid">
-                        {artist.videos.map((video, index) => (
-                            <div key={index} className="video-card">
-                                <h3>{video.titulo}</h3>
-                                <a href={video.link} target="_blank" rel="noopener noreferrer" className="btn btn-secondary">Ver Video</a>
-                            </div>
-                        ))}
-                    </div>
-                </section>
-
-                <section className="details-section">
-                    <div className="details-column">
-                        <h3>Climas</h3>
-                        <div className="tags-cloud">
-                            {artist.climas.map(c => <span key={c} className="tag">{c}</span>)}
+                    {/* STATS DE VISITAS */}
+                    {(artist.visitas_mes || artist.visitas_total) && (
+                        <div className="artist-stats-row">
+                            {artist.visitas_mes != null && (
+                                <span className="artist-stat-pill">
+                                    🔥 <strong>{artist.visitas_mes}</strong> este mes
+                                </span>
+                            )}
+                            {artist.visitas_total != null && (
+                                <span className="artist-stat-pill">
+                                    👀 <strong>{artist.visitas_total}</strong> totales
+                                </span>
+                            )}
                         </div>
-                    </div>
-                    <div className="details-column">
-                        <h3>Tipos de Evento</h3>
-                        <div className="tags-cloud">
-                            {artist.tipos_evento.map(t => <span key={t} className="tag">{t}</span>)}
-                        </div>
-                    </div>
-                </section>
+                    )}
 
-                <section id="contacto" className="contact-section">
-                    <h2>Contacto & Booking</h2>
-                    <div className="contact-info">
-                        <p><strong>Email:</strong> {artist.contacto.email}</p>
-                        <p><strong>WhatsApp:</strong> {artist.contacto.whatsapp}</p>
-                        <div className="social-links">
-                            {artist.contacto.instagram && <p><strong>IG:</strong> @{artist.contacto.instagram}</p>}
-                            {artist.contacto.tiktok && <p><strong>TikTok:</strong> {artist.contacto.tiktok}</p>}
+                    {generos.length > 0 && (
+                        <div className="chip-row">
+                            {generos.map((g) => (
+                                <span key={g} className="chip">{g}</span>
+                            ))}
                         </div>
-                    </div>
-                </section>
-
-                <div className="profile-footer">
-                    <p>Este perfil forma parte de Artbook by 910.WAV.</p>
+                    )}
                 </div>
+            </header>
+
+            {/* CONTENIDO PRINCIPAL (EPK Layout) */}
+            <div className="artist-content-grid">
+
+                {/* BIO */}
+                {artist.bio_corta && (
+                    <section className="artist-section">
+                        <h2 className="artist-section-title">Bio corta</h2>
+                        <p style={{ lineHeight: '1.6', fontSize: '1.05rem', color: 'var(--text-primary)' }}>
+                            {artist.bio_corta}
+                        </p>
+                    </section>
+                )}
+
+                {/* CONTACTO */}
+                {(artist.email || artist.whatsapp || artist.instagram || artist.tiktok || artist.youtube) && (
+                    <section className="artist-section">
+                        <h2 className="artist-section-title">Contacto</h2>
+                        <ul className="contact-list">
+                            {artist.email && (
+                                <li className="contact-item">
+                                    <span style={{ color: 'var(--text-muted)' }}>Email:</span>
+                                    <a href={`mailto:${artist.email}`}>{artist.email}</a>
+                                </li>
+                            )}
+                            {artist.whatsapp && (
+                                <li className="contact-item">
+                                    <span style={{ color: 'var(--text-muted)' }}>WhatsApp:</span>
+                                    <span>{artist.whatsapp}</span>
+                                </li>
+                            )}
+                            {artist.instagram && (
+                                <li className="contact-item">
+                                    <span style={{ color: 'var(--text-muted)' }}>Instagram:</span>
+                                    <a
+                                        href={`https://instagram.com/${artist.instagram.replace("@", "")}`}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                    >
+                                        @{artist.instagram.replace("@", "")}
+                                    </a>
+                                </li>
+                            )}
+                            {artist.tiktok && (
+                                <li className="contact-item">
+                                    <span style={{ color: 'var(--text-muted)' }}>TikTok:</span>
+                                    <a
+                                        href={`https://www.tiktok.com/@${artist.tiktok.replace("@", "")}`}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                    >
+                                        @{artist.tiktok.replace("@", "")}
+                                    </a>
+                                </li>
+                            )}
+                            {artist.youtube && (
+                                <li className="contact-item">
+                                    <span style={{ color: 'var(--text-muted)' }}>YouTube:</span>
+                                    <a href={normalizeLink(artist.youtube)} target="_blank" rel="noreferrer">
+                                        Ver canal
+                                    </a>
+                                </li>
+                            )}
+                        </ul>
+                    </section>
+                )}
+
+                {/* MÚSICA */}
+                {hasMusic && (
+                    <section className="artist-section">
+                        <h2 className="artist-section-title">Música destacada</h2>
+                        <div className="tracks-grid">
+                            {tracks.map((t, idx) => (
+                                <div key={idx} className="track-card">
+                                    {t.titulo && <h3 className="track-title">{t.titulo}</h3>}
+                                    {t.des && <p className="track-desc">{t.des}</p>}
+                                    {t.link && (
+                                        <a
+                                            href={normalizeLink(t.link)}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="track-link"
+                                        >
+                                            Escuchar
+                                        </a>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </section>
+                )}
+
+                {/* VIDEOS */}
+                {hasVideos && (
+                    <section className="artist-section">
+                        <h2 className="artist-section-title">Videos</h2>
+                        <div className="tracks-grid">
+                            {videos.map((v, idx) => (
+                                <div key={idx} className="track-card">
+                                    {v.titulo && <h3 className="track-title">{v.titulo}</h3>}
+                                    {v.link && (
+                                        <a
+                                            href={normalizeLink(v.link)}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            className="track-link"
+                                        >
+                                            Ver en YouTube
+                                        </a>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </section>
+                )}
+            </div>
+
+            {/* BOTÓN VOLVER */}
+            <div className="artist-back">
+                <button className="btn btn-secondary" onClick={() => navigate("/book")}>
+                    Volver al catálogo
+                </button>
             </div>
         </div>
     );

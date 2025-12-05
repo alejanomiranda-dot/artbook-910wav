@@ -1,21 +1,67 @@
-import { Link, Outlet } from 'react-router-dom';
+// src/components/Layout.jsx
+import { Link, NavLink, Outlet } from "react-router-dom";
+import "./Layout.css"; // si tenés estilos externos
 
 function Layout() {
     return (
-        <div className="app-container">
-            <header className="main-header">
-                <div className="logo">Artbook by 910.WAV</div>
-                <nav className="main-nav">
-                    <Link to="/">Inicio</Link>
-                    <Link to="/book">Book</Link>
-                    <Link to="/apply" className="btn-nav-highlight">Quiero estar en Artbook</Link>
-                </nav>
+        <div className="ab-app-shell">
+            {/* NAVBAR */}
+            <header className="ab-header">
+                <div className="ab-header-inner">
+                    {/* Logo */}
+                    <Link to="/" className="ab-logo">
+                        <div className="ab-logo-circle">910</div>
+                        <div className="ab-logo-text">
+                            <span className="ab-logo-title">Artbook</span>
+                            <span className="ab-logo-sub">by 910.WAV</span>
+                        </div>
+                    </Link>
+
+                    {/* Navegación */}
+                    <nav className="ab-nav">
+                        <NavLink
+                            to="/"
+                            className={({ isActive }) =>
+                                isActive ? "ab-nav-item active" : "ab-nav-item"
+                            }
+                        >
+                            Inicio
+                        </NavLink>
+
+                        <NavLink
+                            to="/book"
+                            className={({ isActive }) =>
+                                isActive ? "ab-nav-item active" : "ab-nav-item"
+                            }
+                        >
+                            Book
+                        </NavLink>
+
+                        <NavLink
+                            to="/login"
+                            className={({ isActive }) =>
+                                isActive ? "ab-nav-item active" : "ab-nav-item"
+                            }
+                        >
+                            Login
+                        </NavLink>
+                    </nav>
+
+                    {/* CTA */}
+                    <Link to="/apply" className="ab-cta-btn">
+                        Quiero estar en Artbook
+                    </Link>
+                </div>
             </header>
-            <main className="main-content">
+
+            {/* CONTENIDO PRINCIPAL */}
+            <main className="ab-main">
                 <Outlet />
             </main>
-            <footer className="main-footer">
-                <p>Artbook by 910.WAV — Plataforma de artistas de Rosario y la región.</p>
+
+            {/* FOOTER */}
+            <footer className="ab-footer">
+                Artbook by 910.WAV — Plataforma de artistas de Rosario y la región.
             </footer>
         </div>
     );

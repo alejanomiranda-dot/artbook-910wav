@@ -1,11 +1,29 @@
 import { Link } from 'react-router-dom';
-import { artists } from '../data/artists';
+import { useEffect, useState } from 'react';
+import { supabase } from '../lib/supabaseClient';
+import ArtistCard from '../components/ArtistCard';
+import { normalizeArtist } from '../lib/utils';
 
 function Home() {
-    // Sort artists by visits this month and take top 3
-    const topArtists = [...artists]
-        .sort((a, b) => b.metricas.visitas_mes - a.metricas.visitas_mes)
-        .slice(0, 3);
+    const [topArtists, setTopArtists] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        async function fetchTopArtists() {
+            const { data, error } = await supabase
+                .from('artists')
+                .select('*')
+                .order('visitas_mes', { ascending: false })
+                .limit(8);
+
+            if (!error && data) {
+                setTopArtists(data.map(normalizeArtist));
+            }
+            setLoading(false);
+        }
+
+        fetchTopArtists();
+    }, []);
 
     return (
         <div className="home-page">
@@ -23,23 +41,21 @@ function Home() {
 
             <section className="top-artists">
                 <h2>Los artistas más visitados este mes</h2>
-                <p className="section-subtitle">Una señal de quién está generando más interés en la escena.</p>
+                <p className="section-subtitle">
+                    Estos son los proyectos que están marcando tendencia en la comunidad.
+                </p>
 
-                <div className="artist-grid">
-                    {topArtists.map(artist => (
-                        <div key={artist.slug} className="artist-card">
-                            <div className="card-image" style={{ backgroundImage: `url(${artist.foto})` }}></div>
-                            <div className="card-content">
-                                <h3>{artist.nombre_artistico}</h3>
-                                <p className="card-location">{artist.ciudad}, {artist.pais}</p>
-                                <div className="card-tags">
-                                    {artist.generos.slice(0, 2).map(g => <span key={g} className="tag">{g}</span>)}
-                                </div>
-                                <Link to={`/artist/${artist.slug}`} className="btn btn-small">Ver perfil</Link>
-                            </div>
-                        </div>
-                    ))}
-                </div>
+                {loading ? (
+                    <p className="book-loading">Cargando ranking...</p>
+                ) : topArtists.length > 0 ? (
+                    <div className="artist-grid">
+                        {topArtists.map(artist => (
+                            <ArtistCard key={artist.id} artist={artist} />
+                        ))}
+                    </div>
+                ) : (
+                    <p className="book-empty">Aún no hay suficientes datos para mostrar el ranking.</p>
+                )}
             </section>
         </div>
     );

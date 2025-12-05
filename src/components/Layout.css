@@ -1,0 +1,147 @@
+/* src/components/Layout.css */
+
+/* Shell general */
+.ab-app-shell {
+  background: var(--bg-main);
+  min-height: 100vh;
+  color: var(--text-primary);
+  font-family: var(--font-main);
+}
+
+/* HEADER */
+.ab-header {
+  width: 100%;
+  padding: 1rem 0;
+  backdrop-filter: blur(12px);
+  background: rgba(11, 13, 18, 0.75);
+  border-bottom: 1px solid var(--border-subtle);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.ab-header-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* LOGO */
+.ab-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #fff;
+  text-decoration: none;
+}
+
+.ab-logo-circle {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--gradient-main);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 14px;
+  box-shadow: 0 0 15px rgba(139, 92, 246, 0.5);
+}
+
+.ab-logo-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.ab-logo-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.ab-logo-sub {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+/* NAV ITEMS */
+.ab-nav {
+  display: none;
+  /* Mobile first hidden, or flex on desktop */
+}
+
+@media (min-width: 768px) {
+  .ab-nav {
+    display: flex;
+    gap: 2rem;
+    align-items: center;
+  }
+}
+
+.ab-nav-item {
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.ab-nav-item:hover {
+  color: #fff;
+}
+
+.ab-nav-item.active {
+  color: #fff;
+}
+
+.ab-nav-item.active::after {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: var(--accent-violet);
+  border-radius: 2px;
+  box-shadow: 0 0 10px var(--accent-violet);
+}
+
+/* CTA BUTTON */
+.ab-cta-btn {
+  padding: 0.5rem 1.2rem;
+  border-radius: var(--radius-full);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-subtle);
+  color: #fff;
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.ab-cta-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* MAIN */
+.ab-main {
+  min-height: calc(100vh - 160px);
+}
+
+/* FOOTER */
+.ab-footer {
+  text-align: center;
+  padding: 2rem 0;
+  border-top: 1px solid var(--border-subtle);
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  background: #08090C;
+}
