@@ -17,7 +17,7 @@ function ForgotPassword() {
 
         try {
             const { error } = await supabase.auth.resetPasswordForEmail(email, {
-                redirectTo: `${window.location.origin}/update-password`
+                redirectTo: "https://artbook-910wav.vercel.app/update-password"
             });
 
 

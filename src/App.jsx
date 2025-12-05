@@ -8,11 +8,11 @@ import Home from "./pages/Home";
 import Book from "./pages/Book";
 import Login from "./pages/Login";
 import Apply from "./pages/Apply";
-import ArtistDashboard from "./pages/ArtistDashboard";
-import ArtistProfile from "./pages/ArtistProfile";
-import Admin from "./pages/Admin";
 import ForgotPassword from "./pages/ForgotPassword";
 import UpdatePassword from "./pages/UpdatePassword";
+import ArtistProfile from "./pages/ArtistProfile";
+import ArtistDashboard from "./pages/ArtistDashboard";
+import Admin from "./pages/Admin";
 
 function App() {
   return (
@@ -28,23 +28,21 @@ function App() {
         {/* Login */}
         <Route path="login" element={<Login />} />
 
-        {/* Aplicar como artista */}
+        {/* Alta de artista (Quiero estar en Artbook) */}
         <Route path="apply" element={<Apply />} />
+
+        {/* Recuperar contraseña */}
+        <Route path="forgot-password" element={<ForgotPassword />} />
+        <Route path="update-password" element={<UpdatePassword />} />
+
+        {/* Perfil público por slug */}
+        <Route path="artist/:slug" element={<ArtistProfile />} />
+
+        {/* Admin / Dashboard (si lo usás) */}
+        <Route path="admin" element={<Admin />} />
 
         {/* Dashboard del artista */}
         <Route path="dashboard" element={<ArtistDashboard />} />
-
-        {/* Perfil público de artista */}
-        <Route path="artist/:id" element={<ArtistProfile />} />
-
-        {/* Panel admin */}
-        <Route path="admin" element={<Admin />} />
-
-        {/* Recuperar contraseña (pide email) */}
-        <Route path="forgot-password" element={<ForgotPassword />} />
-
-        {/* Actualizar contraseña (link del mail) */}
-        <Route path="update-password" element={<UpdatePassword />} />
 
         {/* 404 simple */}
         <Route

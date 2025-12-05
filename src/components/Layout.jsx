@@ -1,8 +1,67 @@
 // src/components/Layout.jsx
-import { Link, NavLink, Outlet } from "react-router-dom";
+import { Link, NavLink, Outlet, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { supabase } from "../lib/supabaseClient";
 import "./Layout.css"; // si tenés estilos externos
 
 function Layout() {
+    const [currentUser, setCurrentUser] = useState(null);
+    const [authLoading, setAuthLoading] = useState(true);
+    const [artistSlug, setArtistSlug] = useState(null);
+    const [menuOpen, setMenuOpen] = useState(false);
+    const navigate = useNavigate();
+
+    // 1. Detectar usuario
+    useEffect(() => {
+        let isMounted = true;
+
+        async function loadUser() {
+            const { data, error } = await supabase.auth.getUser();
+            if (!isMounted) return;
+            setCurrentUser(error ? null : data.user ?? null);
+            setAuthLoading(false);
+        }
+
+        loadUser();
+
+        const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+            if (!isMounted) return;
+            setCurrentUser(session?.user ?? null);
+        });
+
+        return () => {
+            isMounted = false;
+            sub?.subscription?.unsubscribe();
+        };
+    }, []);
+
+    // 2. Cargar slug del artista si hay usuario
+    useEffect(() => {
+        async function loadArtistSlug() {
+            if (!currentUser) {
+                setArtistSlug(null);
+                return;
+            }
+
+            const { data, error } = await supabase
+                .from("artist_users")
+                .select("slug")
+                .eq("user_id", currentUser.id)
+                .maybeSingle();
+
+            if (error) {
+                console.error("Error cargando slug de artista:", error);
+                setArtistSlug(null);
+                return;
+            }
+
+            setArtistSlug(data?.slug ?? null);
+        }
+
+        loadArtistSlug();
+    }, [currentUser]);
+
+
     return (
         <div className="ab-app-shell">
             {/* NAVBAR */}
@@ -17,7 +76,7 @@ function Layout() {
                         </div>
                     </Link>
 
-                    {/* Navegación */}
+                    {/* Navegación (visible en desktop) */}
                     <nav className="ab-nav">
                         <NavLink
                             to="/"
@@ -36,21 +95,85 @@ function Layout() {
                         >
                             Book
                         </NavLink>
-
-                        <NavLink
-                            to="/login"
-                            className={({ isActive }) =>
-                                isActive ? "ab-nav-item active" : "ab-nav-item"
-                            }
-                        >
-                            Login
-                        </NavLink>
                     </nav>
 
-                    {/* CTA */}
-                    <Link to="/apply" className="ab-cta-btn">
-                        Quiero estar en Artbook
-                    </Link>
+                    {/* Acciones Derecha */}
+                    <div className="header-actions">
+                        {/* Botón CTA siempre visible */}
+                        <button
+                            className="ab-cta-btn"
+                            onClick={() => navigate("/apply")}
+                            style={{ background: 'transparent', border: '1px solid var(--border-subtle)', cursor: 'pointer' }}
+                        >
+                            Quiero estar en Artbook
+                        </button>
+
+                        {/* Estado: NO Logueado */}
+                        {!authLoading && !currentUser && (
+                            <NavLink
+                                to="/login"
+                                className={({ isActive }) =>
+                                    isActive ? "ab-nav-item active" : "ab-nav-item"
+                                }
+                            >
+                                Login
+                            </NavLink>
+                        )}
+
+                        {/* Estado: SÍ Logueado */}
+                        {!authLoading && currentUser && (
+                            <div className="user-menu-wrapper">
+                                <button
+                                    className="user-avatar-button"
+                                    type="button"
+                                    onClick={() => setMenuOpen((prev) => !prev)}
+                                >
+                                    <span className="user-avatar-circle">
+                                        {currentUser.email?.[0]?.toUpperCase() ?? "U"}
+                                    </span>
+                                </button>
+
+                                {menuOpen && (
+                                    <div className="user-menu-dropdown">
+                                        {artistSlug && (
+                                            <button
+                                                className="user-menu-item"
+                                                onClick={() => {
+                                                    setMenuOpen(false);
+                                                    navigate(`/artist/${artistSlug}`);
+                                                }}
+                                            >
+                                                Ver mi perfil
+                                            </button>
+                                        )}
+
+                                        <button
+                                            className="user-menu-item"
+                                            onClick={() => {
+                                                setMenuOpen(false);
+                                                navigate("/dashboard");
+                                            }}
+                                        >
+                                            Mis settings
+                                        </button>
+
+                                        <div className="user-menu-divider" />
+
+                                        <button
+                                            className="user-menu-item user-menu-item-danger"
+                                            onClick={async () => {
+                                                setMenuOpen(false);
+                                                await supabase.auth.signOut();
+                                                navigate("/");
+                                            }}
+                                        >
+                                            Cerrar sesión
+                                        </button>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
                 </div>
             </header>
 

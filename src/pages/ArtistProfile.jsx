@@ -14,60 +14,80 @@ function ArtistProfile() {
 
     useEffect(() => {
         async function fetchArtist() {
+            // si no hay ni slug ni id, cortamos acá
+            if (!slug) {
+                setErrorMsg("Perfil inválido.");
+                setLoading(false);
+                return;
+            }
+
             setLoading(true);
             setErrorMsg("");
             setArtist(null);
 
-            const { data, error } = await supabase
-                .from("artists")
-                .select("*")
-                .eq("slug", slug)
-                .maybeSingle();
+            try {
+                const { data, error } = await supabase
+                    .from("artists")
+                    .select("*")
+                    .eq("slug", slug)
+                    .maybeSingle();
 
-            if (error) {
-                console.error(error);
-                setErrorMsg("No se pudo cargar el perfil. Probá de nuevo más tarde.");
+                if (error) {
+                    console.error("Error cargando artista:", error);
+                    setErrorMsg(error.message || "No se pudo cargar el perfil. Probá de nuevo más tarde.");
+                    return;
+                }
+
+                if (!slug) {
+                    setErrorMsg("Perfil inválido.");
+                    setLoading(false);
+                    return;
+                }
+
+
+                if (!data) {
+                    setErrorMsg("No encontramos este artista en Artbook.");
+                    return;
+                }
+
+                setArtist(data);
+
+                // ---------- CONTADOR DE VISITAS ----------
+                const now = new Date();
+                const lastVisit = data.ultima_visita ? new Date(data.ultima_visita) : null;
+
+                let newVisitasMes = data.visitas_mes || 0;
+                const currentTotal = data.visitas_total || 0;
+
+                if (
+                    !lastVisit ||
+                    lastVisit.getMonth() !== now.getMonth() ||
+                    lastVisit.getFullYear() !== now.getFullYear()
+                ) {
+                    newVisitasMes = 1;
+                } else {
+                    newVisitasMes += 1;
+                }
+
+                await supabase
+                    .from("artists")
+                    .update({
+                        visitas_total: currentTotal + 1,
+                        visitas_mes: newVisitasMes,
+                        ultima_visita: now.toISOString(),
+                    })
+                    .eq("id", data.id);
+                // ---------------------------------------
+            } catch (err) {
+                console.error("Error inesperado al cargar artista:", err);
+                setErrorMsg("Ocurrió un error inesperado al cargar el perfil.");
+            } finally {
+                // Pase lo que pase, apagamos el loading
                 setLoading(false);
-                return;
             }
-
-            if (!data) {
-                setErrorMsg("No encontramos este artista en Artbook.");
-                setLoading(false);
-                return;
-            }
-
-            setArtist(data);
-            setLoading(false);
-
-            // Contador de visitas
-            const now = new Date();
-            const lastVisit = data.ultima_visita ? new Date(data.ultima_visita) : null;
-
-            let newVisitasMes = data.visitas_mes || 0;
-            const currentTotal = data.visitas_total || 0;
-
-            if (
-                !lastVisit ||
-                lastVisit.getMonth() !== now.getMonth() ||
-                lastVisit.getFullYear() !== now.getFullYear()
-            ) {
-                newVisitasMes = 1;
-            } else {
-                newVisitasMes += 1;
-            }
-
-            await supabase
-                .from("artists")
-                .update({
-                    visitas_total: currentTotal + 1,
-                    visitas_mes: newVisitasMes,
-                    ultima_visita: now.toISOString(),
-                })
-                .eq("id", data.id);
         }
 
-        if (slug) fetchArtist();
+        fetchArtist();
     }, [slug]);
 
     if (loading) {
@@ -128,7 +148,6 @@ function ArtistProfile() {
 
     return (
         <div className="artist-page">
-
             {/* ███ PORTADA DESTACADA (EPK Style) ███ */}
             <div
                 className="artist-cover"
@@ -143,7 +162,7 @@ function ArtistProfile() {
                 }}
             />
 
-            {/* HEADER (Superpuesto) */}
+            {/* HEADER */}
             <header className="artist-header">
                 <div className="artist-avatar-wrapper">
                     {artist.foto && !imgError ? (
@@ -169,7 +188,6 @@ function ArtistProfile() {
                         {artist.pais}
                     </p>
 
-                    {/* STATS DE VISITAS */}
                     {(artist.visitas_mes || artist.visitas_total) && (
                         <div className="artist-stats-row">
                             {artist.visitas_mes != null && (
@@ -197,8 +215,6 @@ function ArtistProfile() {
 
             {/* CONTENIDO PRINCIPAL (EPK Layout) */}
             <div className="artist-content-grid">
-
-                {/* BIO */}
                 {artist.bio_corta && (
                     <section className="artist-section">
                         <h2 className="artist-section-title">Bio corta</h2>
@@ -208,7 +224,6 @@ function ArtistProfile() {
                     </section>
                 )}
 
-                {/* CONTACTO */}
                 {(artist.email || artist.whatsapp || artist.instagram || artist.tiktok || artist.youtube) && (
                     <section className="artist-section">
                         <h2 className="artist-section-title">Contacto</h2>
@@ -261,7 +276,6 @@ function ArtistProfile() {
                     </section>
                 )}
 
-                {/* MÚSICA */}
                 {hasMusic && (
                     <section className="artist-section">
                         <h2 className="artist-section-title">Música destacada</h2>
@@ -286,7 +300,6 @@ function ArtistProfile() {
                     </section>
                 )}
 
-                {/* VIDEOS */}
                 {hasVideos && (
                     <section className="artist-section">
                         <h2 className="artist-section-title">Videos</h2>
@@ -311,7 +324,6 @@ function ArtistProfile() {
                 )}
             </div>
 
-            {/* BOTÓN VOLVER */}
             <div className="artist-back">
                 <button className="btn btn-secondary" onClick={() => navigate("/book")}>
                     Volver al catálogo

@@ -75,8 +75,8 @@ function Apply() {
             "tipos_eventos",
             "bio_corta",
             "email",
-            "whatsapp",
         ];
+
 
         for (const campo of camposObligatorios) {
             if (!formData[campo] || formData[campo].trim() === "") {
