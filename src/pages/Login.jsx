@@ -1,6 +1,6 @@
 // src/pages/Login.jsx
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 
 function Login() {
@@ -74,6 +74,15 @@ function Login() {
                         </button>
                     </div>
                 </form>
+
+                <div style={{ textAlign: "center", marginTop: "1.5rem" }}>
+                    <Link
+                        to="/forgot-password"
+                        style={{ color: "var(--text-muted)", fontSize: "0.9rem", textDecoration: "underline" }}
+                    >
+                        ¿Olvidaste tu contraseña?
+                    </Link>
+                </div>
             </div>
         </div>
     );

@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
+import { getArtistForCurrentUser } from "../lib/utils";
 
 function cleanOrNull(value) {
     if (!value) return null;
@@ -33,48 +34,23 @@ function ArtistDashboard() {
             setLoading(true);
             setError(null);
 
-            // 1. Sesión
-            const {
-                data: { session },
-            } = await supabase.auth.getSession();
+            try {
+                // 1. Obtener usuario (para el estado local y UI)
+                const {
+                    data: { user: currentUser },
+                    error: authError,
+                } = await supabase.auth.getUser();
 
-            if (!session) {
-                navigate("/login");
-                return;
-            }
-            setUser(session.user);
+                if (authError || !currentUser) {
+                    navigate("/login");
+                    return;
+                }
+                setUser(currentUser);
 
-            // 2. Mapping artist_users
-            const { data: mapping, error: mappingError } = await supabase
-                .from("artist_users")
-                .select("artist_id")
-                .eq("user_id", session.user.id)
-                .maybeSingle();
+                // 2. Obtener artista usando el helper
+                const artistData = await getArtistForCurrentUser(supabase);
 
-            if (mappingError) {
-                console.error("Error fetching mapping:", mappingError);
-                setError("Error al verificar tu cuenta de artista.");
-                setLoading(false);
-                return;
-            }
-
-            if (!mapping) {
-                setNoMapping(true);
-                setLoading(false);
-                return;
-            }
-
-            // 3. Datos del artista
-            const { data: artistData, error: artistError } = await supabase
-                .from("artists")
-                .select("*")
-                .eq("id", mapping.artist_id)
-                .single();
-
-            if (artistError) {
-                console.error("Error fetching artist:", artistError);
-                setError("Error al cargar los datos del artista.");
-            } else {
+                // 3. Cargar datos en estado
                 setArtist(artistData);
                 setCoverPreview(artistData.portada || "");
                 setAvatarPreview(artistData.foto || "");
@@ -108,8 +84,17 @@ function ArtistDashboard() {
                     video_2_titulo: artistData.video_2_titulo || "",
                     video_2_link: artistData.video_2_link || "",
                 });
+
+            } catch (err) {
+                console.error("Error loading artist dashboard:", err);
+                if (err.message && (err.message.includes("no tiene un artista asociado") || err.message.includes("Error al verificar"))) {
+                    setNoMapping(true);
+                } else {
+                    setError(err.message || "Ocurrió un error al cargar los datos.");
+                }
+            } finally {
+                setLoading(false);
             }
-            setLoading(false);
         }
 
         fetchSessionAndArtist();
@@ -156,8 +141,9 @@ function ArtistDashboard() {
 
         if (coverFile) {
             const fileExt = coverFile.name.split(".").pop();
-            const safeSlug = artist.slug || artist.id;
-            const filePath = `artists/cover-${safeSlug}.${fileExt}`;
+            // Usamos ID para consistencia, o slug si preferimos nombres leíbles
+            const fileName = `cover-${artist.id}.${fileExt}`;
+            const filePath = `artists/${fileName}`;
 
             const { error: uploadError } = await supabase.storage
                 .from("artist-photos")

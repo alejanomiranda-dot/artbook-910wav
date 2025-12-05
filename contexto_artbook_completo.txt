@@ -1,354 +1,523 @@
-📄 DOCUMENTO MAESTRO DEL PROYECTO — ARTBOOK by 910.WAV
+📘 DOCUMENTO MAESTRO — ARTBOOK by 910.WAV
+Versión completa — Actualizado al 5 de diciembre de 2025
 
-Versión completa – Actualizado al 1 de Diciembre de 2025
 Autor: Alejandro Miranda Baremberg (Ale)
-Asistente de Desarrollo: ChatGPT y Google Antigravity (¿Qué es Google Antigravity?
-Antigravity permite a los usuarios implementar agentes que pueden planificar, ejecutar y verificar de forma autónoma tareas complejas en editores de código, terminales de desarrollo de software y navegadores web
-Antigravity se diseñó como una plataforma "centrada en los agentes". Se presupone que la IA no es solo una herramienta para escribir código, sino un actor autónomo capaz de planificar, ejecutar, validar y realizar iteraciones en tareas de ingeniería complejas con una mínima intervención humana.)
+Asistentes: ChatGPT + Google Antigravity
 
-1. Propósito del Proyecto
+1. PROPÓSITO DEL PROYECTO
 
-Artbook es una plataforma web creada por 910.WAV destinada a:
+Artbook es la plataforma oficial de 910.WAV para:
 
-Mostrar artistas locales (Rosario y región).
+Mostrar artistas de Rosario y la región con una estética moderna y profesional.
 
-Permitir que productores, músicos, organizadores y público descubran talento.
+Permitir inscripción pública.
 
-Permitir que los artistas carguen su perfil de forma simple.
+Brindar perfiles personalizables de artistas.
 
-Centralizar info estética, biográfica, musical y de contacto.
+Exponer música, videos, fotos, biografía y datos de contacto.
 
-Crear ranking mensual según visitas.
+Llevar estadísticas de visitas.
 
-2. Tecnologías Principales
-🚀 Frontend
+Servir como catálogo curado para productores, managers, radios, eventos y marcas.
+
+Artbook debe sentirse como un producto premium, moderno y robusto ― alineado al branding 910.WAV (home studio urbano con estética híbrida digital/retro-futurista).
+
+2. TECNOLOGÍAS ACTUALES
+Frontend
 
 React + Vite
 
-CSS puro (index.css optimizado)
+React Router
 
-Diseño dark/premium inspirado en estética 910.WAV
+CSS puro (tema dark premium)
 
-Componentes modulares
+Componentes diseñados bajo el sistema UI Híbrido PRO + Neon 910.WAV
 
-🗄️ Backend
+Backend / Infra
 
-Supabase (PostgreSQL + Auth + Storage + RLS)
+Supabase
 
-DB de artistas
+PostgreSQL (tabla artists)
 
-Políticas RLS configuradas
+Auth (login de artistas)
 
-Bucket de imágenes: artist-photos
+Storage (bucket artist-photos)
 
-📦 Infraestructura
+RLS configurado
 
-Github (repositorio Artbook-910wav)
+GitHub (repo: artbook-910wav)
 
 Vercel (deploy automático desde main)
 
-n8n (opcional futuro para automatizaciones)
+Herramientas auxiliares
 
-3. Estructura del Proyecto (Frontend)
+Google Antigravity (optimización y edición avanzada del repo)
+
+n8n (para futuras automatizaciones)
+
+3. ESTRUCTURA ACTUAL DEL PROYECTO
 /src
- ├── /components
- │     ├── Header.jsx
- │     ├── ArtistCard.jsx
- │     └── Footer.jsx
- │
- ├── /pages
- │     ├── Home.jsx
- │     ├── Book.jsx
- │     ├── Apply.jsx
- │     └── ArtistProfile.jsx
- │
- ├── /lib
- │     ├── supabaseClient.js
- │     └── utils.js (normalizeArtist y helpers)
- │
- ├── index.css (estilos globales, dark premium)
- ├── main.jsx
- └── App.jsx (router principal)
+/components
+   Header.jsx
+   ArtistCard.jsx
+   ArtistsList.jsx
+   Layout.css
 
-4. Estructura de Base de Datos (Supabase)
+/pages
+   Home.jsx
+   Book.jsx
+   Apply.jsx
+   ArtistProfile.jsx
+   ArtistDashboard.jsx
+   Login.jsx
 
-Tabla principal: artists
+/lib
+   supabaseClient.js
+   utils.js
 
-Campo	Tipo	Descripción
-id	int8 (PK)	Autoincremental
-slug	text	Identificador único URL
-nombre_artistico	text	Nombre del artista
-ciudad	text	Ciudad
-pais	text	País
-generos	text	Géneros musicales
-climas	text	Climas emocionales del show
-tipos_eventos	text	Eventos ideales
-bio_corta	text	Biografía breve
-bio_larga	text	(Opcional)
-foto	text	URL pública en Supabase Storage
-musica_1_titu	text	Título canción 1
-musica_1_des	text	Descripción canción 1
-musica_1_link	text	Link Spotify/YT
-…	…	(Tracks 2 y 3)
-video_1_titulo	text	
-video_1_link	text	
-video_2_titulo	text	
-video_2_link	text	
-highlights	text	
-email	text	
-whatsapp	text	
-instagram	text	
-tiktok	text	
-youtube	text	
-visitas_total	int8	Contador total
-visitas_mes	int8	Contador mensual
-ultima_visita	timestamptz	Última fecha registrada
-5. Supabase Storage
+index.css (tema visual premium general)
+App.jsx (router)
+main.jsx
 
-Bucket público: artist-photos
+Estilo actual: UI Premium 910.WAV
 
-Ruta de almacenamiento:
+Bordes suaves, tarjetas oscuras, gradientes violeta-rosas.
 
-artists/{slug}.{ext}
+Inputs estilizados con glow tenue.
+
+Botones tipo “capsula” con gradiente.
+
+Portada de artista con avatar superpuesto.
+
+Dashboard ordenado en secciones modulares.
+
+4. TABLA PRINCIPAL (Supabase — artists)
+
+Incluye:
+
+Información básica
+
+Redes
+
+Música (3 tracks)
+
+Videos (2 videos)
+
+Highlights
+
+Portada
+
+Foto de perfil
+
+Visitadores (visitas_mes, visitas_total)
+
+Slug único para URL pública
+
+✔️ Ya está sincronizada con todos los componentes actuales.
+
+5. STORAGE (Supabase Storage)
+
+Bucket: artist-photos
+
+Estructura de guardado:
+
+artist-photos/
+   portada/{slug}.{ext}
+   avatar/{slug}.{ext}
 
 
 Permisos:
 
-Lectura pública (anon + authenticated → SELECT)
+Lectura pública
 
-Escritura pública provisional (INSERT) para permitir uploads desde /apply
+Escritura permitida solo desde el cliente autorizado
 
-No borrar/update desde cliente
+Hoy ya funciona la subida de:
 
-6. Flujos Principales del Sitio
-🔹 6.1. Home
+Portada
 
-Hero con bienvenida
+Avatar
 
-Botones CTA → Book / Apply
+Ambas desde el artist dashboard.
 
-Ranking mensual (Top 8 según visitas_mes)
+6. FUNCIONALIDADES DESARROLLADAS
+6.1 Inscripción pública (/apply)
 
-Cards reutilizando ArtistCard.jsx
+Formulario amplio y limpio.
+Carga:
 
-🔹 6.2. Book (Catálogo)
+Foto
 
-Listado ordenado alfabéticamente
+Información general
 
-Filtros:
+Música
 
-Búsqueda por nombre
+Videos
 
-Género
+Contacto
 
-Ciudad
+6.2 Perfil público del artista (/artist/:slug)
 
-Cards estilizadas premium
+Incluye:
 
-🔹 6.3. Apply (Formulario de Artista)
+Portada completa
 
-Carga completa del perfil
-
-Subida de foto al bucket
-
-Validaciones suaves
-
-Mensaje de éxito + redirección automática al perfil del artista
-
-Prevención de doble envío
-
-🔹 6.4. Perfil del Artista
-
-Foto redonda premium
-
-Nombre destacado
-
-Ciudad / País
-
-Géneros / Climas / Tipos de eventos
+Avatar circular
 
 Bio
 
-Contactos con iconos
+Redes clickeables
 
-Música y videos
+Música destacada
 
-Highlights
+Videos
 
-Contador de visitas con lógica mensual incluida
+Chips modernos para géneros / climas / eventos
 
-7. Lógica de Contador de Visitas
+Estadísticas en badges visuales
 
-En ArtistProfile.jsx:
+6.3 Dashboard privado
 
-Al cargar el perfil:
+Un artista puede:
 
-visitas_total + 1
+Editar todos los campos
 
-Si el mes cambió:
+Cambiar foto de perfil
 
-visitas_mes = 1
+Cambiar portada
 
-Si no:
+Editar datos sin obligación de cargar teléfono
 
-visitas_mes + 1
+Guardar cambios con feedback visual
 
-Se actualiza ultima_visita
+6.4 Login de artista
 
-Los datos son enviados a Supabase vía update()
+Funciona con:
 
-8. Lógica de Ranking Mensual
+Email
 
-En Home.jsx:
+Password
 
-select * from artists
+Redirección automática al dashboard
+
+6.5 Ranking mensual (Home)
+
+Consulta:
+
+select *
+from artists
 order by visitas_mes desc
 limit 8
 
+7. SISTEMA DE VISITAS
 
-UseEffect carga los top artistas y renderiza ArtistCard.
+Al cargar un perfil:
 
-9. Utilidades Comunes
+visitas_total += 1
 
-Archivo: /src/lib/utils.js
+Si cambió el mes → visitas_mes = 1
 
-normalizeArtist(artist)
-Corrige campos vacíos, transforma arrays, devuelve un objeto estándar compatible con componentes.
+Sino → visitas_mes += 1
 
-10. Integraciones Actuales
-✔️ Supabase (DB, Storage, API)
-✔️ Github (Repositorio con main)
-✔️ Vercel (Deploy automático + producción)
-✔️ Live Reload con Vite
-11. Posibles Integraciones con n8n (Roadmap Opcional)
-🔸 11.1. Notificaciones Automáticas
+Actualiza ultima_visita
 
-Cuando un artista se inscribe
-→ Email automático a Ale
-→ Confirmación al artista
+Esto ya funciona en producción.
 
-🔸 11.2. Backup Automático
+8. DEPLOY Y PRODUCCIÓN
 
-Cada día a las 6 AM
-→ Export DB artists → Google Drive
+Proyecto está en Vercel.
 
-🔸 11.3. Limpieza Mensual
+Branch principal: main
 
-Detecta cambio de mes
-→ Reinicia visitas_mes
-→ Genera ranking histórico (si se quiere)
+Cada push a main → build automático.
 
-🔸 11.4. Moderación Automática de Contenido
+Se resolvió error crítico:
+"node.exe no such file or directory"
+corrigiendo script a:
 
-Revisión de imágenes + links
-
-Validación previa a publicar
-
-12. Roadmap Próximo
-🔹 1) Sistema de Login para Artistas (Edición de Perfil)
-
-Crear tabla users_artists
-
-Asignar cada artista a un usuario
-
-Permitir login vía email + password
-
-Panel de edición propio del artista
-
-🔹 2) Página /studio para administrar artistas
-
-Panel privado para 910.WAV
-
-Ver nuevos ingresos
-
-Modificar perfiles
-
-Borrar o suspender artistas
-
-🔹 3) Diseño UI aún más premium
-
-Animaciones sutiles
-
-Brillos y gradientes dinámicos
-
-Microtransiciones
-
-Nuevos componentes
-
-🔹 4) Versión pública internacional
-
-Filtros por país
-
-Landing en inglés y español
-
-🔹 5) SEO avanzado
-
-Metatags dinámicas para cada artista
-
-13. Resumen Ejecutivo
-
-Artbook ya es una plataforma funcional con:
-
-Catálogo
-
-Perfiles completos
-
-Carga por formulario
-
-Fotos en Supabase Storage
-
-Contador de visitas
-
-Ranking mensual
-
-Diseño premium
-
-Código modular
-
-Backend listo para escalar
-
-Deploy productivo en Vercel
-
-Lo que sigue es llevarlo a una plataforma completa para artistas:
-autogestión + estadísticas + estudio 910.WAV centralizado + expansión internacional.
-
-14. Instrucciones para reabrir en una nueva conversación
-
-Copiá y pegá este documento completo.
-Decí:
-
-"Este es el Documento Maestro de Artbook. Necesito que partir de ahora tomes esto como base de contexto y trabajemos como si continuáramos la misma conversación."
+"build": "vite build"
 
 
---------------------------------------------------------------------
+Todo está online y funcionando.
 
-### 8. REGLAS DEL PROYECTO (TONO, VISIÓN, OBJETIVOS)
+9. PROBLEMAS YA SOLUCIONADOS HOY
 
-- Artbook es una herramienta profesional, pensada para monetizar y escalar la escena.
-- No es un portfolio personal, sino un **directorio curado**.
-- 910.WAV es marca madre.
-- Todo debe sentirse premium.
-- El diseño no puede parecer improvisado.
-- Cada artista debe tener una experiencia de presentación impecable.
+Deploy fallido → FIX
 
-Tono:  
-Claro, directo, sin tecnicismos innecesarios, pero con solidez profesional.
+Cambios no visibles → causa: build error → FIX
 
+UI vieja en producción → se corrigió con redeploy
 
---------------------------------------------------------------------
+Dashboard incompleto → rediseño modular
 
-### 9. PUNTOS QUE SIEMPRE DEBO RECORDAR PARA FUTURAS CONVERSACIONES
+Inputs pegados y feos → rediseño completo CSS
 
-1. La web corre en Vercel → https://artbook-910wav.vercel.app/book  
-2. La base real es Supabase → tabla `artists`.
-3. Google Sheets NO alimenta directamente la web.
-4. La idea final es integrar Sheets → Supabase → Artbook vía n8n.
-5. El código debe ser modular, limpio y fácil de escalar.
-6. Artbook será parte central del ecosistema 910.WAV.
-7. Las decisiones de UX deben seguir la estética 910.WAV.
-8. No olvidar que 910.WAV es **home studio**, no estudio tradicional.
-9. Antigravity será clave cuando expandamos funciones inteligentes.
+Portada editable → agregado y funcionando
 
---------------------------------------------------------------------
+Avatar editable → agregado y funcionando
 
-### FIN DEL DOCUMENTO
+WhatsApp obligatorio → ahora opcional
+
+10. ROADMAP CERCANO (PRÓXIMOS 7 DÍAS)
+A) Mejoras internas
+
+Pulido final de Home y Book (microanimaciones).
+
+Agregar paginación al catálogo.
+
+SEO básico para perfiles.
+
+B) Sistema de cuenta de artista
+
+Recuperar contraseña
+
+Verificación por email
+
+Bloqueo de bot/spam submissions
+
+C) Herramientas de 910.WAV
+
+Panel privado para Ale (admin)
+
+Modificar cualquier artista
+
+Ocultar / suspender perfiles
+
+Crear categorías destacadas
+
+11. ROADMAP MEDIO PLAZO
+
+Panel analítico para artistas (visitas, clics, reproducciones externas).
+
+Integración con n8n:
+
+Notificaciones al inscribirse
+
+Backup automático
+
+Ranking histórico
+
+Sistema de favoritos / likes
+
+Landing internacional
+
+Multi-idioma
+
+Monetización futura:
+
+Perfiles premium
+
+Reportes avanzados
+
+Servicios 910.WAV integrados
+
+12. TONO Y REGLAS DEL PROYECTO
+
+Minimalista y profesional
+
+No saturar info
+
+Estética 910.WAV siempre presente
+
+Todo accesible desde móvil
+
+UX enfocada en artistas emergentes
+
+13. INSTRUCCIONES PARA REABRIR LA CONVERSACIÓN MAÑANA
+
+Cuando abras un chat nuevo, simplemente escribí:
+
+“Este es el Documento Maestro de Artbook. Necesito que retomes el contexto completo y continuemos trabajando.”
+
+Y pegá este documento.
+Listo: voy a entender absolutamente todo sin que tengas que explicarme nada.
+
+14. ARCHIVO ORIGINAL ADJUNTO (para referencia histórica)
+
+Riesgos, Escalabilidad y Monetización)
+
+(Documento para retomar la conversación en cualquier momento)
+
+1) Riesgos y problemas que Artbook debe evitar
+A) Riesgos técnicos
+
+Concurrencia: si muchos usuarios entran al mismo tiempo, Next.js o Supabase pueden saturarse → sitio lento o caído.
+
+Lectura/escritura excesiva en la base: contador de visitas, catálogo, perfiles → riesgo de throttling en Supabase Free.
+
+Almacenamiento pesado: imágenes grandes y muchas fotos → storage caro o lento.
+
+Sin compresión automática: usar WebP + Image Optimization para evitar carga lenta.
+
+Bots y spam: registros falsos, contenido inapropiado, saturación.
+
+Falta de cache: cada visita consulta la base, multiplicando costos y lentitud.
+
+Picos de tráfico: si un artista viraliza su perfil y entran 200–500 personas juntas, puede romperse todo.
+
+Falta de monitoreo: sin logs, errores invisibles se vuelven problemas graves.
+
+B) Riesgos operativos
+
+Costo de infraestructura si crece sin monetizar.
+
+Experiencia lenta o rota para artistas → abandono.
+
+No tener clara la arquitectura desde temprano → deuda técnica.
+
+No preparar escalabilidad antes de lanzamiento masivo.
+
+2) Plan de Escalabilidad
+A) Etapas definidas
+
+Etapa 0: Preparación, optimización de imágenes, Edge Functions, índices en DB, seguridad RLS.
+
+Etapa 1: 1–100 artistas; medir tiempos reales, verificar estabilidad, implementar rate limits.
+
+Etapa 2: 100–1.000 artistas; Cloudflare, auditoría, mejoras de performance, evitar saturación.
+
+Etapa 3: Escala real; migración a Supabase Pro + Vercel Pro + ImageKit Pro + monitoreo profesional.
+
+Etapa 4: Producto global; microservicios, CDN, replicación geográfica, workers y colas.
+
+B) Costos mensuales estimados para operar Artbook
+
+Vercel Pro: USD 20–40
+
+Supabase Pro: USD 25
+
+Cloudflare Pro: USD 25
+
+ImageKit Pro: USD 10
+
+Logs/monitoring: USD 0–20
+
+Total robusto: ~USD 60–120/mes.
+
+3) Sistema de Suscripción Premium (USD 2/mes)
+Incluye utilidades avanzadas:
+
+Fotos ilimitadas
+
+Links ilimitados
+
+Estadísticas avanzadas (clics, ciudades, horarios, crecimiento)
+
+Ranking premium por género/ciudad
+
+Badge especial
+
+Video-portada
+
+Prioridad en catálogo
+
+Acceso al buscador de colaboraciones (FT)
+
+El precio bajo permite escalar sin barrera económica.
+
+4) Ideas de Monetización (todas las mencionadas hoy)
+Monetización directa
+
+Suscripción Premium (USD 2)
+
+Micro-patrocinios (2 USD/mes por fan)
+
+Crowdfunding interno (90% artista – 10% Artbook)
+
+Marketplace de servicios (mixing, beats, fotos, videos)
+
+Artbook Academy (cursos para artistas)
+
+Add-ons Pro (análisis, press kits, herramientas avanzadas)
+
+Merch oficial Artbook
+
+Merch de los artistas (on demand)
+
+Artbook Sessions (contenido monetizable)
+
+Artbook Radio 24/7 (ads + sponsors)
+
+NFTs/digital collectibles (bien hechos, no humo)
+
+Crowdfunding recurrente (patrons)
+
+Monetización indirecta
+
+Ads (banners, segmentados por género/ciudad)
+
+Sponsors globales y por secciones
+
+Festival Artbook (sponsors + entradas + merch)
+
+Artbook Awards
+
+Artbook for Brands (campañas con artistas)
+
+Micro-patrocinios con badge visible en perfil
+
+5) Micro-Patrocinios (idea clave de monetización)
+Modelo
+
+Fans apoyan con 2 USD/mes al artista.
+
+Reparto:
+
+Artista: 1.40 USD
+
+Artbook: 0.60 USD
+
+Beneficios para el fan:
+
+Badge de patrocinador
+
+Acceso a contenido exclusivo
+
+Mensajes de agradecimiento
+
+Prioridad en sorteos o anuncios
+
+Escala brutal si muchos artistas consiguen pocos mecenas cada uno.
+
+6) Crowdfunding Interno
+Modelo
+
+Artistas crean proyectos con objetivo económico (videoclips, EP, equipo, sesiones).
+
+Reparto:
+
+Artista recibe 90%
+
+Artbook recibe 10%
+
+Recompensas pueden ser:
+
+Agradecimientos
+
+Contenido temprano
+
+Créditos en videos
+
+Material exclusivo
+
+Posiciona Artbook como plataforma que realmente da dinero a los artistas.
+
+7) Beneficio Estratégico General
+
+Artbook se convierte en un ecosistema donde un artista emergente:
+
+muestra su trabajo,
+
+consigue fans,
+
+colabora con otros,
+
+obtiene ingresos reales,
+
+financia proyectos,
+
+recibe sponsors,
+
+y crece dentro y fuera de la plataforma.
+
+Ninguna otra plataforma hace esto para artistas independientes.
