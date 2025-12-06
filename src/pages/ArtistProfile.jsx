@@ -1,117 +1,64 @@
 // src/pages/ArtistProfile.jsx
 import { useParams, useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
-import { supabase } from "../lib/supabaseClient";
+import { useState, useEffect } from "react";
+import { useArtistProfile } from "../hooks/useArtistProfile";
+import { usePremiumStatus } from "../hooks/usePremiumStatus";
+import { normalizeGenres } from "../lib/utils";
+import { GENEROS_NORMALIZACION } from "../lib/constants";
+import LoadingSpinner from "../components/ui/LoadingSpinner";
+import ErrorMessage from "../components/ui/ErrorMessage";
+import PremiumBadge from "../components/premium/PremiumBadge";
+import RequestShowModal from "../components/RequestShowModal";
 
 function ArtistProfile() {
     const { slug } = useParams();
     const navigate = useNavigate();
 
-    const [artist, setArtist] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [errorMsg, setErrorMsg] = useState("");
+    // Hooks
+    const { artist, loading, error, trackVisit } = useArtistProfile(slug);
+    const { tier, isPremium } = usePremiumStatus(artist?.id);
+
+    // Local UI state
     const [imgError, setImgError] = useState(false);
+    const [copied, setCopied] = useState(false);
+    const [isRequestModalOpen, setIsRequestModalOpen] = useState(false);
 
+    // Track visit when artist is loaded
     useEffect(() => {
-        async function fetchArtist() {
-            // si no hay ni slug ni id, cortamos acá
-            if (!slug) {
-                setErrorMsg("Perfil inválido.");
-                setLoading(false);
-                return;
-            }
-
-            setLoading(true);
-            setErrorMsg("");
-            setArtist(null);
-
-            try {
-                const { data, error } = await supabase
-                    .from("artists")
-                    .select("*")
-                    .eq("slug", slug)
-                    .maybeSingle();
-
-                if (error) {
-                    console.error("Error cargando artista:", error);
-                    setErrorMsg(error.message || "No se pudo cargar el perfil. Probá de nuevo más tarde.");
-                    return;
-                }
-
-                if (!slug) {
-                    setErrorMsg("Perfil inválido.");
-                    setLoading(false);
-                    return;
-                }
-
-
-                if (!data) {
-                    setErrorMsg("No encontramos este artista en Artbook.");
-                    return;
-                }
-
-                setArtist(data);
-
-                // ---------- CONTADOR DE VISITAS ----------
-                const now = new Date();
-                const lastVisit = data.ultima_visita ? new Date(data.ultima_visita) : null;
-
-                let newVisitasMes = data.visitas_mes || 0;
-                const currentTotal = data.visitas_total || 0;
-
-                if (
-                    !lastVisit ||
-                    lastVisit.getMonth() !== now.getMonth() ||
-                    lastVisit.getFullYear() !== now.getFullYear()
-                ) {
-                    newVisitasMes = 1;
-                } else {
-                    newVisitasMes += 1;
-                }
-
-                await supabase
-                    .from("artists")
-                    .update({
-                        visitas_total: currentTotal + 1,
-                        visitas_mes: newVisitasMes,
-                        ultima_visita: now.toISOString(),
-                    })
-                    .eq("id", data.id);
-                // ---------------------------------------
-            } catch (err) {
-                console.error("Error inesperado al cargar artista:", err);
-                setErrorMsg("Ocurrió un error inesperado al cargar el perfil.");
-            } finally {
-                // Pase lo que pase, apagamos el loading
-                setLoading(false);
-            }
+        if (artist?.id) {
+            trackVisit(artist.id);
         }
+    }, [artist?.id]); // Solo cuando cambia el ID del artista
 
-        fetchArtist();
-    }, [slug]);
-
+    // Loading state
     if (loading) {
         return (
-            <div className="artist-page">
-                <p className="artist-status-text">Cargando perfil…</p>
+            <div className="artist-page" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '60vh' }}>
+                <LoadingSpinner size="lg" />
             </div>
         );
     }
 
-    if (errorMsg) {
+    // Error state
+    if (error) {
         return (
-            <div className="artist-page">
-                <p className="artist-status-text artist-status-error">{errorMsg}</p>
-                <button className="btn btn-secondary" onClick={() => navigate("/book")}>
+            <div className="artist-page" style={{ textAlign: 'center', padding: '3rem' }}>
+                <ErrorMessage message={error} />
+                <button
+                    className="btn btn-secondary"
+                    onClick={() => navigate("/book")}
+                    style={{ marginTop: '1.5rem' }}
+                >
                     Volver al catálogo
                 </button>
             </div>
         );
     }
 
+    // No artist found
     if (!artist) {
         return (
-            <div className="artist-page">
+            <div className="artist-page" style={{ textAlign: 'center', padding: '3rem' }}>
                 <p className="artist-status-text">Perfil no disponible.</p>
                 <button className="btn btn-secondary" onClick={() => navigate("/book")}>
                     Volver al catálogo
@@ -120,16 +67,56 @@ function ArtistProfile() {
         );
     }
 
-    // Helpers
-    const generos = artist.generos ? artist.generos.split(",").map(g => g.trim()).filter(Boolean) : [];
-    const tiposEventos = artist.tipos_eventos ? artist.tipos_eventos.split(",").map(t => t.trim()).filter(Boolean) : [];
-    const climas = artist.climas ? artist.climas.split(",").map(c => c.trim()).filter(Boolean) : [];
+    // ========== Helper Functions ==========
+
+    // Usa normalizeGenres y aplica normalización de nombres
+    const generos = Array.from(
+        new Set(
+            normalizeGenres(artist.generos).map(g => {
+                const key = g.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+                return GENEROS_NORMALIZACION[key] || g;
+            })
+        )
+    );
+
+    const tiposEventos = Array.from(
+        new Set(
+            normalizeGenres(artist.tipos_eventos)
+        )
+    );
+
+    const climas = Array.from(
+        new Set(
+            normalizeGenres(artist.climas)
+        )
+    );
+
+    const highlightsList = artist.highlights
+        ? artist.highlights.split("\n").filter(h => h.trim())
+        : [];
+
+
+    const handleShare = async () => {
+        try {
+            await navigator.clipboard.writeText(window.location.href);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+        } catch (err) {
+            console.error("Error al copiar link:", err);
+        }
+    };
 
     const normalizeLink = (url) => {
         if (!url) return "";
         const trimmed = url.trim();
         if (trimmed.startsWith("http://") || trimmed.startsWith("https://")) return trimmed;
         return `https://${trimmed}`;
+    };
+
+    const getWhatsappLink = (wa) => {
+        if (!wa) return "";
+        const clean = wa.replace(/\D/g, "");
+        return `https://wa.me/${clean}`;
     };
 
     const tracks = [
@@ -145,6 +132,8 @@ function ArtistProfile() {
 
     const hasMusic = tracks.length > 0;
     const hasVideos = videos.length > 0;
+
+    // ========== Render ==========
 
     return (
         <div className="artist-page">
@@ -180,7 +169,11 @@ function ArtistProfile() {
                 </div>
 
                 <div className="artist-main-info">
-                    <h1 className="artist-name">{artist.nombre_artistico}</h1>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+                        <h1 className="artist-name">{artist.nombre_artistico}</h1>
+                        {/* 💎 Premium Badge (solo visible si es premium) */}
+                        {isPremium && <PremiumBadge tier={tier} size="md" />}
+                    </div>
 
                     <p className="artist-location">
                         {artist.ciudad}
@@ -188,18 +181,14 @@ function ArtistProfile() {
                         {artist.pais}
                     </p>
 
-                    {(artist.visitas_mes || artist.visitas_total) && (
+                    {(artist.visitas_mes != null || artist.visitas_total != null) && (
                         <div className="artist-stats-row">
-                            {artist.visitas_mes != null && (
-                                <span className="artist-stat-pill">
-                                    🔥 <strong>{artist.visitas_mes}</strong> este mes
-                                </span>
-                            )}
-                            {artist.visitas_total != null && (
-                                <span className="artist-stat-pill">
-                                    👀 <strong>{artist.visitas_total}</strong> totales
-                                </span>
-                            )}
+                            <span className="artist-stat-pill">
+                                🔥 <strong>{Number(artist.visitas_mes) || 0}</strong> este mes
+                            </span>
+                            <span className="artist-stat-pill">
+                                👀 <strong>{Number(artist.visitas_total) || 0}</strong> totales
+                            </span>
                         </div>
                     )}
 
@@ -210,6 +199,19 @@ function ArtistProfile() {
                             ))}
                         </div>
                     )}
+
+                    <div className="artist-actions-row" style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginTop: '1rem' }}>
+                        <button className="btn btn-primary" onClick={() => setIsRequestModalOpen(true)}>
+                            Solicitar show
+                        </button>
+
+                        <button
+                            className="btn btn-secondary"
+                            onClick={handleShare}
+                        >
+                            {copied ? "¡Link copiado!" : "Compartir este perfil"}
+                        </button>
+                    </div>
                 </div>
             </header>
 
@@ -224,9 +226,45 @@ function ArtistProfile() {
                     </section>
                 )}
 
-                {(artist.email || artist.whatsapp || artist.instagram || artist.tiktok || artist.youtube) && (
+                {/* HIGHLIGHTS */}
+                {highlightsList.length > 0 && (
                     <section className="artist-section">
-                        <h2 className="artist-section-title">Contacto</h2>
+                        <h2 className="artist-section-title">Highlights</h2>
+                        <ul className="highlights-list" style={{ listStyle: 'none', padding: 0, display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                            {highlightsList.map((h, i) => (
+                                <li key={i} style={{
+                                    background: 'rgba(255,255,255,0.05)',
+                                    padding: '0.5rem 1rem',
+                                    borderRadius: '8px',
+                                    borderLeft: '2px solid var(--accent-violet)',
+                                    color: 'var(--text-primary)',
+                                    fontSize: '0.95rem'
+                                }}>
+                                    {h}
+                                </li>
+                            ))}
+                        </ul>
+                    </section>
+                )}
+
+                {/* SHOWS / BOOKING */}
+                {tiposEventos.length > 0 && (
+                    <section className="artist-section">
+                        <h2 className="artist-section-title">Shows / Booking</h2>
+                        <div className="chip-row">
+                            {tiposEventos.map((t) => (
+                                <span key={t} className="chip">
+                                    {t}
+                                </span>
+                            ))}
+                        </div>
+                    </section>
+                )}
+
+                {/* CONTRATACIONES */}
+                {(artist.email || artist.whatsapp) && (
+                    <section className="artist-section">
+                        <h2 className="artist-section-title">Contacto para contrataciones</h2>
                         <ul className="contact-list">
                             {artist.email && (
                                 <li className="contact-item">
@@ -237,9 +275,25 @@ function ArtistProfile() {
                             {artist.whatsapp && (
                                 <li className="contact-item">
                                     <span style={{ color: 'var(--text-muted)' }}>WhatsApp:</span>
-                                    <span>{artist.whatsapp}</span>
+                                    <a
+                                        href={getWhatsappLink(artist.whatsapp)}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        style={{ color: '#25D366' }}
+                                    >
+                                        {artist.whatsapp}
+                                    </a>
                                 </li>
                             )}
+                        </ul>
+                    </section>
+                )}
+
+                {/* REDES SOCIALES */}
+                {(artist.instagram || artist.tiktok || artist.youtube) && (
+                    <section className="artist-section">
+                        <h2 className="artist-section-title">Redes Sociales</h2>
+                        <ul className="contact-list">
                             {artist.instagram && (
                                 <li className="contact-item">
                                     <span style={{ color: 'var(--text-muted)' }}>Instagram:</span>
@@ -329,6 +383,18 @@ function ArtistProfile() {
                     Volver al catálogo
                 </button>
             </div>
+
+            {/* MODAL DE BOOKING */}
+            {artist && (
+                <RequestShowModal
+                    isOpen={isRequestModalOpen}
+                    onClose={() => setIsRequestModalOpen(false)}
+                    artistId={artist.id}
+                    artistSlug={artist.slug}
+                    artistName={artist.nombre_artistico}
+                    artistEmail={artist.email}
+                />
+            )}
         </div>
     );
 }

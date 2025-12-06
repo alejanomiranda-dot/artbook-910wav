@@ -1,8 +1,12 @@
 import { Link } from 'react-router-dom';
 import { useState } from 'react';
+import { usePremiumStatus } from '../hooks/usePremiumStatus';
+import PremiumBadge from './premium/PremiumBadge';
 
 function ArtistCard({ artist }) {
     const [imgError, setImgError] = useState(false);
+    const { isPremium, tier } = usePremiumStatus(artist?.id);
+
     if (!artist) return null;
 
     return (
@@ -18,6 +22,18 @@ function ArtistCard({ artist }) {
                 ) : (
                     <div className="card-image-placeholder">
                         <span>{artist.nombre_artistico?.[0] || 'A'}</span>
+                    </div>
+                )}
+
+                {/* Premium Badge - solo si es premium */}
+                {isPremium && (
+                    <div style={{
+                        position: 'absolute',
+                        top: '0.75rem',
+                        right: '0.75rem',
+                        zIndex: 10
+                    }}>
+                        <PremiumBadge tier={tier} size="sm" />
                     </div>
                 )}
             </div>
@@ -50,3 +66,4 @@ function ArtistCard({ artist }) {
 }
 
 export default ArtistCard;
+

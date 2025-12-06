@@ -13,6 +13,7 @@ import UpdatePassword from "./pages/UpdatePassword";
 import ArtistProfile from "./pages/ArtistProfile";
 import ArtistDashboard from "./pages/ArtistDashboard";
 import Admin from "./pages/Admin";
+import Pricing from "./pages/Pricing";
 
 function App() {
   return (
@@ -24,6 +25,9 @@ function App() {
 
         {/* Catálogo */}
         <Route path="book" element={<Book />} />
+
+        {/* Pricing */}
+        <Route path="pricing" element={<Pricing />} />
 
         {/* Login */}
         <Route path="login" element={<Login />} />
@@ -60,3 +64,4 @@ function App() {
 }
 
 export default App;
+

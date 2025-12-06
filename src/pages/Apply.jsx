@@ -2,6 +2,13 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
+import { normalizeGenres } from "../lib/utils";
+import {
+    TIPOS_EVENTOS_OPCIONES,
+    GENEROS_OPCIONES,
+    CLIMAS_OPCIONES,
+    CIUDADES_ARG
+} from "../lib/constants";
 
 // helper para limpiar strings
 function cleanOrNull(value) {
@@ -59,6 +66,39 @@ function Apply() {
     const handleChange = (e) => {
         const { name, value } = e.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
+    };
+
+    const handleTipoEventoToggle = (opcion) => {
+        // Parsear actuales
+        const actuales = normalizeGenres(formData.tipos_eventos);
+
+        let nuevos;
+        if (actuales.includes(opcion)) {
+            nuevos = actuales.filter(o => o !== opcion);
+        } else {
+            nuevos = [...actuales, opcion];
+        }
+
+        setFormData(prev => ({
+            ...prev,
+            tipos_eventos: nuevos.join(", ")
+        }));
+    };
+
+    const handleGenerosToggle = (opcion) => {
+        const actuales = normalizeGenres(formData.generos);
+        let nuevos = actuales.includes(opcion)
+            ? actuales.filter(o => o !== opcion)
+            : [...actuales, opcion];
+        setFormData(prev => ({ ...prev, generos: nuevos.join(", ") }));
+    };
+
+    const handleClimasToggle = (opcion) => {
+        const actuales = normalizeGenres(formData.climas);
+        let nuevos = actuales.includes(opcion)
+            ? actuales.filter(o => o !== opcion)
+            : [...actuales, opcion];
+        setFormData(prev => ({ ...prev, climas: nuevos.join(", ") }));
     };
 
     const handleSubmit = async (e) => {
@@ -212,17 +252,26 @@ function Apply() {
                             />
                         </label>
 
-                        <label>
-                            Ciudad *
-                            <input
-                                type="text"
-                                name="ciudad"
-                                value={formData.ciudad}
-                                onChange={handleChange}
-                                required
-                                placeholder="Ej. Rosario"
-                            />
-                        </label>
+                        <div className="form-row">
+                            <label className="full-width">
+                                Ciudad *
+                                <select
+                                    name="ciudad"
+                                    value={formData.ciudad}
+                                    onChange={handleChange}
+                                    required
+                                    className="input"
+                                    style={{ background: 'var(--bg-input)', color: '#fff' }}
+                                >
+                                    <option value="">Seleccioná tu ciudad</option>
+                                    {CIUDADES_ARG.map((c) => (
+                                        <option key={c.ciudad} value={c.ciudad}>
+                                            {c.ciudad} ({c.provincia})
+                                        </option>
+                                    ))}
+                                </select>
+                            </label>
+                        </div>
 
                         <label>
                             País *
@@ -260,42 +309,115 @@ function Apply() {
 
                     <div className="form-row">
                         <label className="full-width">
-                            Géneros (separados por coma) *
-                            <input
-                                type="text"
-                                name="generos"
-                                value={formData.generos}
-                                onChange={handleChange}
-                                placeholder="Pop, Rock, Trap..."
-                                required
-                            />
+                            Géneros (elegí uno o más) *
+
+                            <div className="checkbox-grid" style={{
+                                display: 'grid',
+                                gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
+                                gap: '0.5rem',
+                                marginTop: '0.5rem'
+                            }}>
+                                {GENEROS_OPCIONES.map((opcion) => {
+                                    const isSelected = normalizeGenres(formData.generos).includes(opcion);
+
+                                    return (
+                                        <label key={opcion} style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '0.5rem',
+                                            cursor: 'pointer',
+                                            padding: '0.5rem',
+                                            background: 'var(--bg-input)',
+                                            borderRadius: '8px',
+                                            border: isSelected ? '1px solid var(--accent-violet)' : '1px solid transparent'
+                                        }}>
+                                            <input
+                                                type="checkbox"
+                                                checked={isSelected}
+                                                onChange={() => handleGenerosToggle(opcion)}
+                                                style={{ accentColor: 'var(--accent-violet)' }}
+                                            />
+                                            <span style={{ fontSize: '0.9rem' }}>{opcion}</span>
+                                        </label>
+                                    );
+                                })}
+                            </div>
                         </label>
                     </div>
 
                     <div className="form-row">
                         <label className="full-width">
-                            Climas (separados por coma)
-                            <input
-                                type="text"
-                                name="climas"
-                                value={formData.climas}
-                                onChange={handleChange}
-                                placeholder="Fiesta, Chill, Emotivo..."
-                            />
+                            Climas (elegí uno o más)
+
+                            <div className="checkbox-grid" style={{
+                                display: 'grid',
+                                gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
+                                gap: '0.5rem',
+                                marginTop: '0.5rem'
+                            }}>
+                                {CLIMAS_OPCIONES.map((opcion) => {
+                                    const isSelected = normalizeGenres(formData.climas).includes(opcion);
+
+                                    return (
+                                        <label key={opcion} style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '0.5rem',
+                                            cursor: 'pointer',
+                                            padding: '0.5rem',
+                                            background: 'var(--bg-input)',
+                                            borderRadius: '8px',
+                                            border: isSelected ? '1px solid var(--accent-violet)' : '1px solid transparent'
+                                        }}>
+                                            <input
+                                                type="checkbox"
+                                                checked={isSelected}
+                                                onChange={() => handleClimasToggle(opcion)}
+                                                style={{ accentColor: 'var(--accent-violet)' }}
+                                            />
+                                            <span style={{ fontSize: '0.9rem' }}>{opcion}</span>
+                                        </label>
+                                    );
+                                })}
+                            </div>
                         </label>
                     </div>
 
                     <div className="form-row">
                         <label className="full-width">
-                            Tipos de Evento (separados por coma) *
-                            <input
-                                type="text"
-                                name="tipos_eventos"
-                                value={formData.tipos_eventos}
-                                onChange={handleChange}
-                                placeholder="Casamiento, Corporativo..."
-                                required
-                            />
+                            Tipos de Show / Eventos (podés elegir más de uno) *
+
+                            <div className="checkbox-grid" style={{
+                                display: 'grid',
+                                gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+                                gap: '0.5rem',
+                                marginTop: '0.5rem'
+                            }}>
+                                {TIPOS_EVENTOS_OPCIONES.map((opcion) => {
+                                    const isSelected = normalizeGenres(formData.tipos_eventos).includes(opcion);
+
+                                    return (
+                                        <label key={opcion} style={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '0.5rem',
+                                            cursor: 'pointer',
+                                            padding: '0.5rem',
+                                            background: 'var(--bg-input)',
+                                            borderRadius: '8px',
+                                            border: isSelected ? '1px solid var(--accent-violet)' : '1px solid transparent'
+                                        }}>
+                                            <input
+                                                type="checkbox"
+                                                checked={isSelected}
+                                                onChange={() => handleTipoEventoToggle(opcion)}
+                                                style={{ accentColor: 'var(--accent-violet)' }}
+                                            />
+                                            <span style={{ fontSize: '0.9rem' }}>{opcion}</span>
+                                        </label>
+                                    );
+                                })}
+                            </div>
                         </label>
                     </div>
 

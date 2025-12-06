@@ -1,9 +1,23 @@
+/**
+ * Normaliza géneros que pueden venir como string, array o null desde Supabase
+ * @param {string|array|null} generos - Géneros en cualquier formato
+ * @returns {array} Array de géneros normalizados
+ */
+export function normalizeGenres(generos) {
+    if (Array.isArray(generos)) return generos;
+    if (typeof generos === 'string') {
+        return generos
+            .split(',')
+            .map(g => g.trim())
+            .filter(Boolean);
+    }
+    return [];
+}
+
 export function normalizeArtist(row) {
     return {
         ...row,
-        generos: row.generos
-            ? row.generos.split(",").map((g) => g.trim()).filter(Boolean)
-            : [],
+        generos: normalizeGenres(row.generos),
         climas: row.climas
             ? row.climas.split(",").map((c) => c.trim()).filter(Boolean)
             : [],
@@ -16,6 +30,7 @@ export function normalizeArtist(row) {
         },
     };
 }
+
 
 /**
  * Obtiene el artista asociado al usuario actual logueado via 'artist_users'.

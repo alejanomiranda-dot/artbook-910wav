@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 import ArtistCard from "../components/ArtistCard";
 import { normalizeArtist } from "../lib/utils";
+import { GENEROS_OPCIONES, CIUDADES_ARG } from "../lib/constants";
 
 const PAGE_SIZE = 12;
 
@@ -24,42 +25,25 @@ function BookPage() {
     const [allGenres, setAllGenres] = useState(["Todos los géneros"]);
     const [allCities, setAllCities] = useState(["Todas las ciudades"]);
 
-    // 1. Cargar opciones de filtros (ciudades y géneros) una sola vez
+    // 1. Cargar opciones de filtros (ciudades y géneros)
+    // NOTA: Ahora las opciones vienen de CONSTANTES, pero mantenemos esta logica
+    // por si queremos solo mostrar opciones que tengan al menos 1 artista.
+    // Para simplificar y cumplir el requerimiento, vamos a usar DIRECTAMENTE las constantes
+    // para los selects, ignorando lo que venga de la DB para poblar el dropdown.
     useEffect(() => {
-        async function fetchFilterOptions() {
-            try {
-                const { data, error } = await supabase
-                    .from("artists")
-                    .select("generos, ciudad");
+        // Podríamos hacer un fetch para ver counts, pero por ahora
+        // usamos las constantes estáticas para rellenar los selects.
+        setAllGenres(["Todos los géneros", ...GENEROS_OPCIONES.sort()]);
 
-                if (error) throw error;
-
-                // Procesar géneros
-                const genresSet = new Set();
-                const citiesSet = new Set();
-
-                (data || []).forEach((row) => {
-                    // Géneros
-                    if (row.generos) {
-                        row.generos.split(",").forEach((g) => {
-                            const trimmed = g.trim();
-                            if (trimmed) genresSet.add(trimmed);
-                        });
-                    }
-                    // Ciudades
-                    if (row.ciudad && row.ciudad.trim()) {
-                        citiesSet.add(row.ciudad.trim());
-                    }
-                });
-
-                setAllGenres(["Todos los géneros", ...Array.from(genresSet).sort()]);
-                setAllCities(["Todas las ciudades", ...Array.from(citiesSet).sort()]);
-            } catch (err) {
-                console.error("Error cargando filtros:", err);
-            }
-        }
-        fetchFilterOptions();
+        // Mapeamos CIUDADES_ARG a solo nombres de ciudades
+        const cityNames = CIUDADES_ARG.map(c => c.ciudad).sort();
+        setAllCities(["Todas las ciudades", ...cityNames]);
     }, []);
+
+    // Scroll to Top efect
+    useEffect(() => {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, [page, searchTerm, genreFilter, cityFilter]);
 
     // 2. Fetch principal con Paginación y Filtros de Supabase
     useEffect(() => {
@@ -141,6 +125,31 @@ function BookPage() {
         if (page < totalPages) setPage((p) => p + 1);
     };
 
+    const handleClearFilters = () => {
+        setSearchTerm("");
+        setGenreFilter("Todos los géneros");
+        setCityFilter("Todas las ciudades");
+        setPage(1);
+    };
+
+    // Skeleton Component local
+    const SkeletonCard = () => (
+        <div style={{
+            background: 'var(--bg-card)',
+            borderRadius: '16px',
+            border: '1px solid var(--border-subtle)',
+            overflow: 'hidden',
+            height: '420px', // aprox altura de card real
+            position: 'relative'
+        }}>
+            <div style={{ height: '320px', background: 'rgba(255,255,255,0.05)' }} />
+            <div style={{ padding: '1rem' }}>
+                <div style={{ height: '24px', width: '70%', background: 'rgba(255,255,255,0.05)', marginBottom: '0.5rem', borderRadius: '4px' }} />
+                <div style={{ height: '16px', width: '40%', background: 'rgba(255,255,255,0.05)', borderRadius: '4px' }} />
+            </div>
+        </div>
+    );
+
     return (
         <div className="page-wrapper">
             <div className="page-header">
@@ -186,13 +195,30 @@ function BookPage() {
                 </select>
             </div>
 
-            {/* Estado de carga / error */}
-            {loading && <p className="status-text">Cargando artistas...</p>}
+            {/* Estado de carga (Skeleton) */}
+            {loading && (
+                <div className="artist-grid">
+                    {Array.from({ length: 6 }).map((_, i) => (
+                        <SkeletonCard key={i} />
+                    ))}
+                </div>
+            )}
+
+            {/* Error */}
             {error && <p className="status-text error-text">{error}</p>}
 
-            {/* Resultado */}
+            {/* Resultado Vacío */}
             {!loading && !error && artists.length === 0 && (
-                <p className="status-text">No se encontraron artistas con estos filtros.</p>
+                <div style={{ textAlign: 'center', marginTop: '3rem' }}>
+                    <p className="status-text">No se encontraron artistas con estos filtros.</p>
+                    <button
+                        className="btn btn-secondary"
+                        onClick={handleClearFilters}
+                        style={{ marginTop: '1rem' }}
+                    >
+                        Limpiar filtros
+                    </button>
+                </div>
             )}
 
             {!loading && !error && artists.length > 0 && (

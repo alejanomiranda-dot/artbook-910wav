@@ -22,3 +22,20 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+.vercel
+.env*.local
+
+# Docs and test data
+docs/
+
+# Supabase CLI (usar global o npx)
+supabase_*/
+*.tar.gz
+*.zip
+
+# Archivos temporales
+*.tmp
+*.bak
+actualización.txt
+contexto_*.txt

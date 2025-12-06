@@ -1,32 +1,36 @@
 // src/pages/Login.jsx
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { supabase } from "../lib/supabaseClient";
+import { useAuth } from "../hooks/useAuth";
+import ErrorMessage from "../components/ui/ErrorMessage";
 
 function Login() {
     const navigate = useNavigate();
+    const { login, loading: authLoading } = useAuth();
+
+    // Form state
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
-    const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    const [submitting, setSubmitting] = useState(false);
 
     const handleLogin = async (e) => {
         e.preventDefault();
-        setLoading(true);
+        setSubmitting(true);
         setError(null);
 
-        const { error } = await supabase.auth.signInWithPassword({
-            email,
-            password,
-        });
+        const result = await login(email, password);
 
-        if (error) {
-            setError(error.message);
-            setLoading(false);
-        } else {
+        if (result.success) {
+            // Redirigir al dashboard
             navigate("/dashboard");
+        } else {
+            setError(result.error || "Error al iniciar sesión");
+            setSubmitting(false);
         }
     };
+
+    const isLoading = authLoading || submitting;
 
     return (
         <div className="page-wrapper" style={{
@@ -49,6 +53,7 @@ function Login() {
                                 onChange={(e) => setEmail(e.target.value)}
                                 required
                                 placeholder="tu@email.com"
+                                disabled={isLoading}
                             />
                         </label>
                     </div>
@@ -62,15 +67,21 @@ function Login() {
                                 onChange={(e) => setPassword(e.target.value)}
                                 required
                                 placeholder="••••••••"
+                                disabled={isLoading}
                             />
                         </label>
                     </div>
 
-                    {error && <p className="form-message form-message-error">{error}</p>}
+                    <ErrorMessage message={error} />
 
                     <div className="form-actions">
-                        <button type="submit" className="btn btn-primary" disabled={loading} style={{ width: "100%" }}>
-                            {loading ? "Ingresando..." : "Ingresar"}
+                        <button
+                            type="submit"
+                            className="btn btn-primary"
+                            disabled={isLoading}
+                            style={{ width: "100%" }}
+                        >
+                            {isLoading ? "Ingresando..." : "Ingresar"}
                         </button>
                     </div>
                 </form>
@@ -89,3 +100,4 @@ function Login() {
 }
 
 export default Login;
+
